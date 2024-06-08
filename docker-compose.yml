@@ -9,6 +9,12 @@ services:
     ports:
       - "8080:80"
 
+  logger-service:
+    build:
+      context: ./logger-service
+      dockerfile: ./logger-service.dockerfile
+    restart: always
+
   authentication-service:
     build:
       context: ./authentication-service
@@ -34,6 +40,17 @@ services:
     volumes:
       - ./db-data/postgres/:/var/lib/postgresql/data/
     restart: always
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: logger
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - ./db-data/mongo/:/data/db
 
 volumes:
   postgres:
