@@ -2,19 +2,13 @@ package main
 
 import (
 	"fmt"
+	"listener/event"
 	"log"
 	"math"
-	"net/http"
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
-
-const webPort = "80"
-
-type Config struct {
-	Rabbit *amqp.Connection
-}
 
 func main() {
 	rabbitConn, err := connect()
@@ -25,21 +19,17 @@ func main() {
 
 	defer rabbitConn.Close()
 
-	app := Config{
-		Rabbit: rabbitConn,
-	}
+	log.Println("Listening for and consuming messages...")
 
-	log.Println("Starting front end service on port " + webPort)
-
-	server := http.Server{
-		Addr:    ":" + webPort,
-		Handler: app.routes(),
-	}
-
-	err = server.ListenAndServe()
+	consumer, err := event.NewConsumer(rabbitConn, "logs_topic")
 
 	if err != nil {
-		log.Panic(err)
+		log.Fatal("Failed to create consumer: ", err)
+	}
+
+	err = consumer.Listen([]string{"log.INFO", "log.ERROR", "log.WARNING"})
+	if err != nil {
+		log.Fatal("Failed to listen for messages: ", err)
 	}
 }
 

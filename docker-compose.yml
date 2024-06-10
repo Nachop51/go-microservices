@@ -45,6 +45,14 @@ services:
       FROM_EMAIL: "no-reply@localhost"
       FROM_NAME: "No Reply"
 
+  listener-service:
+    build:
+      context: ./listener-service
+      dockerfile: ./listener-service.dockerfile
+    depends_on:
+      - rabbitmq
+    restart: always
+
   postgres:
     image: postgres:latest
     ports:
@@ -73,3 +81,10 @@ services:
     ports:
       - "8025:8025"
       - "1025:1025"
+
+  rabbitmq:
+    image: 'rabbitmq:3.9-alpine'
+    ports:
+      - "5672:5672"
+    volumes:
+      - ./db-data/rabbitmq:/var/lib/rabbitmq
