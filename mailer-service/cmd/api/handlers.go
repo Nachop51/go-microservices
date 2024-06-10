@@ -40,7 +40,7 @@ func (app *Config) sendMail(w http.ResponseWriter, r *http.Request) {
 		Message: "Message sent to " + requestPayload.To,
 	}
 
-	if err := app.writeJSON(w, http.StatusOK, payload); err != nil {
+	if err := app.writeJSON(w, http.StatusAccepted, payload); err != nil {
 		app.errorJSON(w, err)
 	}
 }

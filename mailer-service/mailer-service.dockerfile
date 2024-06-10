@@ -14,5 +14,6 @@ WORKDIR /app
 
 # COPY --from=builder /app/mailerApp /app
 COPY mailerApp .
+COPY templates ./templates
 
 CMD ["/app/mailerApp"]
