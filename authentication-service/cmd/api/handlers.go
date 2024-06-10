@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"log"
 	"net/http"
 )
@@ -29,22 +31,22 @@ func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println("there is a user", user)
-
 	if user.Active == 0 {
 		app.errorJSON(w, err, http.StatusUnauthorized)
 		return
 	}
 
-	log.Println("is user active", user.Active)
-
-	log.Println("User", user)
-	log.Println("User", requestPayload.Password)
-
 	valid, err := user.PasswordMatches(requestPayload.Password)
 
 	if err != nil || !valid {
 		app.errorJSON(w, err, http.StatusUnauthorized)
+		return
+	}
+
+	err = app.logRequest("authenticate", requestPayload.Email)
+
+	if err != nil {
+		app.errorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -55,4 +57,28 @@ func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.writeJSON(w, http.StatusOK, payload)
+}
+
+func (app *Config) logRequest(name, data string) error {
+	var entry struct {
+		Name string `json:"name"`
+		Data string `json:"data"`
+	}
+
+	entry.Name = name
+	entry.Data = data
+
+	jsonData, err := json.MarshalIndent(entry, "", "\t")
+
+	if err != nil {
+		return err
+	}
+
+	response, err := http.Post("http://logger-service/log", "application/json", bytes.NewBuffer(jsonData))
+
+	if err != nil || response.StatusCode != http.StatusOK {
+		return err
+	}
+
+	return nil
 }

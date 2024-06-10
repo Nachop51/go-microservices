@@ -28,18 +28,34 @@ services:
       - postgres
     restart: always
 
+  mailer-service:
+    build:
+      context: ./mailer-service
+      dockerfile: ./mailer-service.dockerfile
+    depends_on:
+      - mailhog
+    restart: always
+    environment:
+      MAIL_DOMAIN: "localhost"
+      MAIL_HOST: "mailhog"
+      MAIL_PORT: "1025"
+      MAIL_ENCRYPTION: "none"
+      MAIL_USERNAME: ""
+      MAIL_PASSWORD: ""
+      FROM_EMAIL: "no-reply@localhost"
+      FROM_NAME: "No Reply"
 
   postgres:
     image: postgres:latest
     ports:
         - "5433:5432"
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=users
-    volumes:
-      - ./db-data/postgres/:/var/lib/postgresql/data/
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: users
     restart: always
+    volumes:
+      - ./db-data/postgres/:/var/lib/postgresql/data
 
   mongo:
     image: mongo:latest
@@ -52,6 +68,8 @@ services:
     volumes:
       - ./db-data/mongo/:/data/db
 
-volumes:
-  postgres:
-
+  mailhog:
+    image: 'mailhog/mailhog:latest'
+    ports:
+      - "8025:8025"
+      - "1025:1025"

@@ -23,8 +23,7 @@ func (app *Config) routes() http.Handler {
 	}))
 
 	router.Use(middleware.Heartbeat("/health"))
-
-	router.Post("/log", app.WriteLog)
+	router.Post("/send", app.sendMail)
 
 	return router
 }
