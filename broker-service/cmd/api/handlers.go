@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/rpc"
 )
 
 func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +59,8 @@ func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 		app.Authenticate(w, requestPayload.Auth)
 	case "log":
 		// app.Log(w, requestPayload.Log)
-		app.logEventViaRabbit(w, requestPayload.Log)
+		// app.logEventViaRabbit(w, requestPayload.Log)
+		app.logItemViaRPC(w, requestPayload.Log)
 	case "mail":
 		app.SendMail(w, requestPayload.Mail)
 	default:
@@ -198,4 +200,36 @@ func (app *Config) pushToQueue(name, msg string) error {
 	j, _ := json.MarshalIndent(payload, "", "\t")
 
 	return emitter.Push(string(j), "log.INFO")
+}
+
+func (app *Config) logItemViaRPC(w http.ResponseWriter, data LogPayload) {
+	client, err := rpc.Dial("tcp", "logger-service:5001")
+
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	rpcPayload := LogPayload{
+		Name: data.Name,
+		Data: data.Data,
+	}
+
+	var result string
+
+	err = client.Call("RPCServer.LogInfo", rpcPayload, &result)
+
+	if err != nil {
+		app.errorJSON(w, err)
+		return
+	}
+
+	payload := jsonResponse{
+		Error:   false,
+		Message: result,
+	}
+
+	if err := app.writeJSON(w, http.StatusOK, payload); err != nil {
+		app.errorJSON(w, err)
+	}
 }
